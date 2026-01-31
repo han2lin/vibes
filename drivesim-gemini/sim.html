@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Churro Drive Sim</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        @keyframes spin-gear {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes spin-gear-reverse {
+            from {
+                transform: rotate(360deg);
+            }
+
+            to {
+                transform: rotate(0deg);
+            }
+        }
+
+        @keyframes friction-spark {
+            0% {
+                opacity: 0;
+                transform: translateX(0) scaleX(0.5);
+            }
+
+            20% {
+                opacity: 1;
+                transform: translateX(-5px) scaleX(1.2);
+            }
+
+            100% {
+                opacity: 0;
+                transform: translateX(-20px) scaleX(0.8);
+            }
+        }
+
+        .animate-spin-gear {
+            animation: spin-gear var(--duration, 1s) linear infinite;
+        }
+
+        .animate-spin-gear-reverse {
+            animation: spin-gear-reverse var(--duration, 1s) linear infinite;
+        }
+
+        .animate-spark-1 {
+            animation: friction-spark 0.3s infinite linear;
+        }
+
+        .animate-spark-2 {
+            animation: friction-spark 0.4s infinite linear 0.1s;
+        }
+
+        .animate-spark-3 {
+            animation: friction-spark 0.25s infinite linear 0.05s;
+        }
+
+        /* Transition handling */
+        .gear-group {
+            transition: transform 0.1s linear;
+            /* fallback */
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 text-slate-900 min-h-screen selection:bg-amber-100 selection:text-amber-900">
+    <div class="max-w-7xl mx-auto p-6 md:p-12 space-y-10">
+        <!-- Header -->
+        <header
+            class="flex flex-col md:flex-row justify-between items-start md:items-end gap-8 border-b border-slate-200 pb-10">
+            <div class="space-y-4">
+                <div class="flex items-center gap-5">
+                    <div
+                        class="w-16 h-16 bg-amber-500 flex items-center justify-center rounded-2xl font-black text-white text-1xl italic shadow-xl shadow-amber-500/20">
+                        8048
+                    </div>
+                    <div>
+                        <h1 class="text-6xl font-black text-slate-900 italic tracking-tighter leading-none">
+                            CHURRO DRIVE <span class="text-amber-500">SIM</span>
+                        </h1>
+                        <p class="text-slate-400 font-mono text-sm uppercase tracking-[0.4em] mt-2 font-bold">
+                            DRIVETRAIN KINETICS SIMULATOR
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
+            <!-- Controls Column -->
+            <div class="lg:col-span-4 space-y-10">
+                <div class="flex items-center justify-between border-l-4 border-slate-900 pl-5 py-2">
+                    <h2 class="text-base font-black uppercase tracking-widest text-slate-900">
+                        Configuration
+                    </h2>
+                </div>
+
+                <!-- Sliders Container -->
+                <div class="space-y-6">
+                    <!-- Wheel Radius Slider -->
+                    <div
+                        class="flex flex-col gap-3 p-5 bg-white border border-slate-200 rounded-2xl shadow-sm transition-all hover:border-amber-400 hover:shadow-md">
+                        <div class="flex justify-between items-center">
+                            <label class="text-xs font-black uppercase tracking-widest text-slate-500">Wheel
+                                Radius</label>
+                            <div class="flex items-baseline gap-1.5">
+                                <span class="text-xl font-mono font-bold text-amber-600"
+                                    id="val-wheelRadius">0.038m</span>
+                                <span class="text-[10px] font-mono font-bold text-slate-400 italic"
+                                    id="sec-wheelRadius">(1.5 in)</span>
+                            </div>
+                        </div>
+                        <div class="relative flex items-center h-6">
+                            <input type="range" id="input-wheelRadius" min="0.02" max="0.15" step="0.001" value="0.0381"
+                                class="w-full h-2 bg-slate-100 rounded-full appearance-none cursor-pointer accent-amber-500 hover:accent-amber-600 transition-all border border-slate-200">
+                        </div>
+                        <p class="text-[11px] text-slate-400 font-medium leading-tight mt-1">Larger wheels increase top
+                            speed but decrease torque leverage (acceleration).</p>
+                    </div>
+
+                    <!-- Drive Gearing Slider -->
+                    <div
+                        class="flex flex-col gap-3 p-5 bg-white border border-slate-200 rounded-2xl shadow-sm transition-all hover:border-amber-400 hover:shadow-md">
+                        <div class="flex justify-between items-center">
+                            <label class="text-xs font-black uppercase tracking-widest text-slate-500">Drive
+                                Gearing</label>
+                            <div class="flex items-baseline gap-1.5">
+                                <span class="text-xl font-mono font-bold text-amber-600"
+                                    id="val-driveGearing">5.14:1</span>
+                            </div>
+                        </div>
+                        <div class="relative flex items-center h-6">
+                            <input type="range" id="input-driveGearing" min="1.0" max="25.0" step="0.05" value="5.143"
+                                class="w-full h-2 bg-slate-100 rounded-full appearance-none cursor-pointer accent-amber-500 hover:accent-amber-600 transition-all border border-slate-200">
+                        </div>
+                        <p class="text-[11px] text-slate-400 font-medium leading-tight mt-1">Higher reduction multiplies
+                            motor torque for better acceleration, capping top speed.</p>
+                    </div>
+
+                    <!-- Current Limit Slider -->
+                    <div
+                        class="flex flex-col gap-3 p-5 bg-white border border-slate-200 rounded-2xl shadow-sm transition-all hover:border-amber-400 hover:shadow-md">
+                        <div class="flex justify-between items-center">
+                            <label class="text-xs font-black uppercase tracking-widest text-slate-500">Current
+                                Limit</label>
+                            <div class="flex items-baseline gap-1.5">
+                                <span class="text-xl font-mono font-bold text-amber-600"
+                                    id="val-currentLimit">40A</span>
+                            </div>
+                        </div>
+                        <div class="relative flex items-center h-6">
+                            <input type="range" id="input-currentLimit" min="10" max="120" step="5" value="40"
+                                class="w-full h-2 bg-slate-100 rounded-full appearance-none cursor-pointer accent-amber-500 hover:accent-amber-600 transition-all border border-slate-200">
+                        </div>
+                        <p class="text-[11px] text-slate-400 font-medium leading-tight mt-1">Caps total electrical
+                            power. Low limits act as a bottleneck for peak force.</p>
+                    </div>
+
+                    <!-- Max Speed Slider -->
+                    <div
+                        class="flex flex-col gap-3 p-5 bg-white border border-slate-200 rounded-2xl shadow-sm transition-all hover:border-amber-400 hover:shadow-md">
+                        <div class="flex justify-between items-center">
+                            <label class="text-xs font-black uppercase tracking-widest text-slate-500">Max Speed</label>
+                            <div class="flex items-baseline gap-1.5">
+                                <span class="text-xl font-mono font-bold text-amber-600"
+                                    id="val-maxDriveSpeed">4.5m/s</span>
+                                <span class="text-[10px] font-mono font-bold text-slate-400 italic"
+                                    id="sec-maxDriveSpeed">(14.8 ft/s)</span>
+                            </div>
+                        </div>
+                        <div class="relative flex items-center h-6">
+                            <input type="range" id="input-maxDriveSpeed" min="1.0" max="12.0" step="0.1" value="4.5"
+                                class="w-full h-2 bg-slate-100 rounded-full appearance-none cursor-pointer accent-amber-500 hover:accent-amber-600 transition-all border border-slate-200">
+                        </div>
+                        <p class="text-[11px] text-slate-400 font-medium leading-tight mt-1">Robot max speed used to
+                            calculate potential back electromotive force efficiency losses.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Column -->
+            <div class="lg:col-span-8 space-y-12">
+
+                <!-- Dashboard Summary Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Acceleration Card -->
+                    <div
+                        class="bg-white border border-slate-200 p-12 rounded-[2.5rem] relative overflow-hidden group hover:shadow-xl hover:shadow-amber-500/5 transition-all">
+                        <div
+                            class="absolute -top-10 -right-10 p-4 opacity-5 text-amber-500 group-hover:opacity-10 transition-opacity">
+                            <svg class="w-56 h-56" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M13 10V3L4 14H11V21L20 10H13Z" />
+                            </svg>
+                        </div>
+                        <p class="text-xs text-slate-400 font-black uppercase tracking-[0.4em] mb-4">Max Starting
+                            Acceleration</p>
+                        <div class="flex flex-col gap-1">
+                            <div class="flex items-baseline gap-4">
+                                <span class="text-8xl font-black text-slate-900 italic tracking-tighter"
+                                    id="result-maxAccel">
+                                    0.00
+                                </span>
+                                <span class="text-2xl text-amber-500 font-black uppercase italic">m/s²</span>
+                            </div>
+                            <div class="text-sm font-mono font-bold text-slate-400 italic pl-1"
+                                id="result-maxAccel-imperial">
+                                (0.0 ft/s²)
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bottleneck Card -->
+                    <div id="card-limitingFactor"
+                        class="p-12 rounded-[2.5rem] border-2 transition-all shadow-sm flex flex-col justify-center bg-emerald-50 border-emerald-200">
+                        <p class="text-xs text-slate-500 font-black uppercase tracking-[0.4em] mb-4">Current Bottleneck
+                        </p>
+                        <p class="text-5xl font-black text-slate-900 uppercase italic tracking-tighter leading-tight"
+                            id="result-limitingFactor">
+                            NONE
+                        </p>
+                        <p class="text-xs text-slate-500 mt-6 font-medium leading-relaxed uppercase italic"
+                            id="text-limitingFactor">
+                            Motor torque is the primary limiting factor for this configuration.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Visualization Frame -->
+                <div class="space-y-6">
+                    <h2
+                        class="text-xs font-black uppercase tracking-[0.5em] text-slate-400 flex items-center gap-5 px-2">
+                        <span class="w-16 h-1 bg-slate-200 rounded-full"></span>
+                        Live Mechanical Telemetry
+                        <span class="flex-1 h-px bg-slate-200"></span>
+                    </h2>
+
+                    <!-- Gear Visualizer Container -->
+                    <div id="vis-container"
+                        class="relative w-full h-100 bg-white border border-slate-200 rounded-3xl flex items-center justify-center overflow-hidden shadow-sm aspect-[2/1] md:aspect-[2.5/1]">
+                        <!-- Dynamic CSS included in JS -->
+
+                        <svg width="100%" height="100%" viewBox="0 0 400 200" class="overflow-visible">
+                            <!-- Ground Line -->
+                            <line id="vis-ground" x1="0" y1="130" x2="400" y2="130" stroke="#cbd5e1" strokeWidth="2"
+                                strokeDasharray="8 4" />
+
+                            <!-- MOTOR GEAR GROUP -->
+                            <g id="vis-motor-group" transform="translate(80, 100)">
+                                <text x="-25" y="-25" textAnchor="middle"
+                                    class="text-[8px] fill-slate-400 font-black uppercase tracking-widest">NEO
+                                    Motor</text>
+                                <g id="vis-motor-gear" class="text-slate-300">
+                                    <circle r="15" fill="none" stroke="currentColor" strokeWidth="3" />
+                                    <circle r="9" fill="currentColor" opacity="0.3" />
+                                    <!-- Teeth will be generated by JS or hardcoded for simplicity. Let's hardcode 8 teeth -->
+                                    <g id="vis-motor-teeth">
+                                        <!-- Teeth generated via JS helper or just static since r is constant? r is constant (motorRadius=15) -->
+                                        <!-- 8 teeth -->
+                                        <rect x="-1.5" y="-19" width="3" height="6" fill="currentColor"
+                                            transform="rotate(0)" />
+                                        <rect x="-1.5" y="-19" width="3" height="6" fill="currentColor"
+                                            transform="rotate(45)" />
+                                        <rect x="-1.5" y="-19" width="3" height="6" fill="currentColor"
+                                            transform="rotate(90)" />
+                                        <rect x="-1.5" y="-19" width="3" height="6" fill="currentColor"
+                                            transform="rotate(135)" />
+                                        <rect x="-1.5" y="-19" width="3" height="6" fill="currentColor"
+                                            transform="rotate(180)" />
+                                        <rect x="-1.5" y="-19" width="3" height="6" fill="currentColor"
+                                            transform="rotate(225)" />
+                                        <rect x="-1.5" y="-19" width="3" height="6" fill="currentColor"
+                                            transform="rotate(270)" />
+                                        <rect x="-1.5" y="-19" width="3" height="6" fill="currentColor"
+                                            transform="rotate(315)" />
+                                    </g>
+                                    <circle cx="10" cy="0" r="2" fill="white" />
+                                </g>
+                            </g>
+
+                            <!-- AXLE -->
+                            <line id="vis-axle" x1="120" y1="100" x2="300" y2="100" stroke="#e2e8f0" strokeWidth="6"
+                                strokeLinecap="round" />
+
+                            <!-- DRIVEN GEAR GROUP -->
+                            <g id="vis-driven-group" transform="translate(120, 100)">
+                                <text id="vis-driven-label" y="-40" textAnchor="middle"
+                                    class="text-[8px] fill-amber-700 font-black uppercase tracking-widest">Gearing</text>
+                                <g id="vis-driven-gear" class="text-slate-300">
+                                    <circle id="vis-driven-circle" r="30" fill="none" stroke="currentColor"
+                                        strokeWidth="3" />
+                                    <circle id="vis-driven-inner" r="20" fill="#fef3c7" opacity="0.8" />
+                                    <g id="vis-driven-teeth">
+                                        <!-- Will populate with JS -->
+                                    </g>
+                                    <circle id="vis-driven-dot" cx="22" cy="0" r="3" fill="#b45309" />
+                                    <path id="vis-driven-cross" d="" stroke="currentColor" strokeWidth="1"
+                                        opacity="0.2" />
+                                </g>
+                            </g>
+
+                            <!-- WHEEL GROUP -->
+                            <g transform="translate(300, 100)">
+                                <text id="vis-wheel-label" y="-50" textAnchor="middle"
+                                    class="text-[8px] fill-slate-800 font-black uppercase tracking-widest">Wheel</text>
+
+                                <!-- Sparks -->
+                                <g id="vis-sparks" transform="translate(-25, 30)" style="display: none;">
+                                    <line x1="0" y1="0" x2="-15" y2="2" stroke="#f59e0b" strokeWidth="2"
+                                        strokeLinecap="round" class="animate-spark-1" />
+                                    <line x1="2" y1="4" x2="-10" y2="6" stroke="#fbbf24" strokeWidth="2"
+                                        strokeLinecap="round" class="animate-spark-2" />
+                                    <line x1="-2" y1="-2" x2="-12" y2="-1" stroke="#d97706" strokeWidth="2"
+                                        strokeLinecap="round" class="animate-spark-3" />
+                                </g>
+
+                                <!-- Rotating Wheel -->
+                                <g id="vis-wheel-rotator">
+                                    <circle id="vis-wheel-tire" r="30.5" fill="none" stroke="#334155"
+                                        strokeWidth="18" />
+                                    <circle id="vis-wheel-rim" r="21.5" fill="none" stroke="#475569" strokeWidth="2" />
+                                    <g id="vis-wheel-spokes">
+                                        <!-- Spokes (8) -->
+                                        <line x1="0" y1="0" x2="20" y2="0" stroke="#f59e0b" strokeWidth="4"
+                                            transform="rotate(0)" />
+                                        <line x1="0" y1="0" x2="20" y2="0" stroke="#f59e0b" strokeWidth="4"
+                                            transform="rotate(45)" />
+                                        <line x1="0" y1="0" x2="20" y2="0" stroke="#f59e0b" strokeWidth="4"
+                                            transform="rotate(90)" />
+                                        <line x1="0" y1="0" x2="20" y2="0" stroke="#f59e0b" strokeWidth="4"
+                                            transform="rotate(135)" />
+                                        <line x1="0" y1="0" x2="20" y2="0" stroke="#f59e0b" strokeWidth="4"
+                                            transform="rotate(180)" />
+                                        <line x1="0" y1="0" x2="20" y2="0" stroke="#f59e0b" strokeWidth="4"
+                                            transform="rotate(225)" />
+                                        <line x1="0" y1="0" x2="20" y2="0" stroke="#f59e0b" strokeWidth="4"
+                                            transform="rotate(270)" />
+                                        <line x1="0" y1="0" x2="20" y2="0" stroke="#f59e0b" strokeWidth="4"
+                                            transform="rotate(315)" />
+                                    </g>
+                                    <circle r="12" fill="#1e293b" stroke="#f59e0b" strokeWidth="3" />
+                                </g>
+                            </g>
+                        </svg>
+
+                        <!-- HUD Overlays -->
+                        <div class="absolute top-6 left-6 flex flex-col gap-3">
+                            <div id="hud-status"
+                                class="text-[11px] font-black font-mono px-4 py-2 rounded-xl border shadow-sm tracking-widest bg-emerald-50 border-emerald-200 text-emerald-600">
+                                STATUS: NOMINAL
+                            </div>
+                            <div id="hud-limit"
+                                class="hidden text-[11px] font-black font-mono px-4 py-2 rounded-xl border shadow-sm tracking-widest animate-pulse bg-amber-100 border-amber-300 text-amber-700">
+                                TRACTION LIMITED
+                            </div>
+                            <div id="stall-warning"
+                                class="hidden max-w-[200px] text-[10px] font-bold text-rose-500 bg-white/90 backdrop-blur-sm p-3 rounded-xl border border-rose-100 shadow-lg leading-tight">
+                                Insufficient torque! Increase gearing or reduce wheel size.
+                            </div>
+                        </div>
+
+                        <div
+                            class="absolute bottom-6 right-6 text-[11px] font-mono bg-white/90 backdrop-blur-sm px-6 py-4 rounded-2xl border border-slate-200 text-slate-500 space-y-2 shadow-lg">
+                            <div class="flex justify-between gap-10">
+                                <span class="font-bold">TOTAL RATIO</span>
+                                <span class="text-amber-600 font-black" id="hud-ratio">5.14:1</span>
+                            </div>
+                            <div class="flex justify-between gap-10">
+                                <span class="font-bold">VELOCITY CAP</span>
+                                <span class="text-amber-600 font-black" id="hud-velocity">0.19x</span>
+                            </div>
+                        </div>
+
+                        <div class="absolute bottom-6 left-8">
+                            <div
+                                class="text-[13px] font-mono text-slate-300 uppercase tracking-[0.5em] font-black italic">
+                                8048 SIMULATION
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Insights & Metrics -->
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-10">
+                    <!-- Chart -->
+                    <div
+                        class="md:col-span-5 bg-white border border-slate-200 p-10 rounded-[2.5rem] h-80 flex flex-col shadow-sm">
+                        <h3
+                            class="text-xs font-black text-slate-400 mb-10 uppercase tracking-[0.4em] flex items-center justify-between border-b border-slate-50 pb-4">
+                            Scale View
+                            <span class="w-3 h-3 rounded-full bg-amber-500 shadow-lg shadow-amber-500/40"></span>
+                        </h3>
+                        <div class="flex-1 relative flex items-end px-4 pb-2 border-b border-l border-slate-100">
+                            <!-- Simple CSS Bar Chart -->
+                            <!-- Y Axis labels approximately placed -->
+                            <div
+                                class="absolute left-0 top-0 h-full flex flex-col justify-between text-[10px] text-slate-400 font-bold -ml-6">
+                                <span>16</span>
+                                <span>12</span>
+                                <span>8</span>
+                                <span>4</span>
+                                <span>0</span>
+                            </div>
+
+                            <!-- Grid lines -->
+                            <div class="absolute inset-0 flex flex-col justify-between pointer-events-none z-0">
+                                <div class="w-full h-px bg-slate-50"></div>
+                                <div class="w-full h-px bg-slate-50"></div>
+                                <div class="w-full h-px bg-slate-50"></div>
+                                <div class="w-full h-px bg-slate-50"></div>
+                                <div class="w-full h-px bg-slate-50"></div>
+                            </div>
+
+                            <!-- The Bar -->
+                            <div class="w-full h-full flex items-end justify-center z-10 relative group">
+                                <div id="chart-bar"
+                                    class="w-20 bg-amber-500 rounded-t-xl transition-all duration-500 ease-out relative group-hover:bg-amber-400"
+                                    style="height: 50%;">
+                                    <!-- Tooltip -->
+                                    <div
+                                        class="absolute -top-12 left-1/2 -translate-x-1/2 bg-white px-3 py-1 rounded-xl shadow-lg border border-slate-100 text-amber-600 font-black text-sm opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-20">
+                                        <span id="chart-tooltip">0.00</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Fundamentals -->
+                    <div
+                        class="md:col-span-7 bg-white border border-slate-200 p-12 rounded-[2.5rem] flex flex-col justify-between shadow-sm relative overflow-hidden">
+                        <div class="absolute -bottom-4 -right-4 opacity-5 pointer-events-none">
+                            <svg class="w-32 h-32" fill="currentColor" viewBox="0 0 24 24">
+                                <path
+                                    d="M12 2L1 21H23L12 2M12 6L19.53 19H4.47L12 6M11 10V14H13V10H11M11 16V18H13V16H11Z" />
+                            </svg>
+                        </div>
+                        <div class="space-y-6">
+                            <h3
+                                class="text-xs font-black text-slate-900 uppercase flex items-center gap-4 tracking-[0.5em] border-b border-slate-100 pb-5">
+                                Fundamentals
+                            </h3>
+                            <div class="space-y-4 text-slate-600 text-sm font-medium leading-relaxed">
+                                <p>
+                                    <span class="text-slate-900 font-black">Trade-Offs:</span> Gearing behaves like a
+                                    lever. A <span class="text-amber-600 font-bold italic">High Gearing</span> (large
+                                    reduction) makes it easier for the motor to turn the wheel, increasing acceleration
+                                    but lowering the maximum possible speed.
+                                </p>
+                                <p>
+                                    <span class="text-slate-900 font-black">Wheel Interaction:</span> Larger wheels
+                                    cover more ground per rotation (higher speed) but require more torque to "push" the
+                                    robot forward, making them harder for a motor to accelerate.
+                                </p>
+                                <p>
+                                    <span class="text-slate-900 font-black">Electronic Limits:</span> Even with perfect
+                                    gearing, your <span class="text-amber-600 font-bold italic">Current Limit</span>
+                                    acts as a ceiling on how much torque the motor can actually produce.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer
+            class="pt-20 border-t border-slate-200 flex flex-col md:flex-row justify-between items-center gap-8 text-slate-300 text-xs font-black uppercase tracking-[0.6em] pb-16">
+            <p>COEFFICIENT OF FRICTION μ=1.20 • NEO VORTEX MODEL</p>
+        </footer>
+    </div>
+
+    <script src="./physics.js"></script>
+    <script src="./app.js"></script>
+</body>
+
+</html>
