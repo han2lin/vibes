@@ -1,5 +1,0 @@
-{
-  "name": "Churro Drive Sim",
-  "description": "An interactive simulator for students to explore the physics of robot drivetrains, focusing on how wheel radius, gearing, and current limits affect maximum acceleration.",
-  "requestFramePermissions": []
-}
