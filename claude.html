@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Max Acceleration Calculator</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%);
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 215, 0, 0.05) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: gridMove 20s linear infinite;
+            z-index: 0;
+        }
+        @keyframes gridMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+        #root {
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 24px;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 215, 0, 0.2);
+            padding: 48px;
+            backdrop-filter: blur(10px);
+        }
+        h1 {
+            margin: 0 0 8px 0;
+            color: #1a1a1a;
+            font-size: 42px;
+            font-weight: 800;
+            letter-spacing: -1px;
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .subtitle {
+            color: #666;
+            margin: 0 0 40px 0;
+            font-size: 18px;
+            font-weight: 500;
+        }
+        .result-card {
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #FF8C00 100%);
+            color: #1a1a1a;
+            padding: 32px;
+            border-radius: 20px;
+            margin-bottom: 40px;
+            text-align: center;
+            border: none;
+            box-shadow: 0 20px 60px rgba(255, 215, 0, 0.4), 0 0 0 1px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+            animation: pulse 3s ease-in-out infinite;
+        }
+        .result-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transform: rotate(45deg);
+            animation: shimmer 3s linear infinite;
+        }
+        @keyframes shimmer {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 20px 60px rgba(255, 215, 0, 0.4), 0 0 0 1px rgba(0, 0, 0, 0.1); }
+            50% { box-shadow: 0 25px 70px rgba(255, 215, 0, 0.5), 0 0 0 1px rgba(0, 0, 0, 0.1); }
+        }
+        .result-label {
+            font-size: 14px;
+            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 12px;
+            font-weight: 700;
+            position: relative;
+            z-index: 1;
+        }
+        .result-value {
+            font-size: 72px;
+            font-weight: 900;
+            margin-bottom: 4px;
+            position: relative;
+            z-index: 1;
+            letter-spacing: -2px;
+        }
+        .result-unit {
+            font-size: 24px;
+            opacity: 0.9;
+            font-weight: 600;
+            position: relative;
+            z-index: 1;
+        }
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+        .control-group {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
+            padding: 24px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+        .control-group:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(255, 215, 0, 0.2);
+            border-color: rgba(255, 215, 0, 0.4);
+        }
+        .control-label {
+            display: block;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 12px;
+            font-size: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .control-value {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .value-display {
+            font-size: 24px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
+        }
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: linear-gradient(90deg, #FFD700 0%, #FFA500 100%);
+            outline: none;
+            -webkit-appearance: none;
+            position: relative;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(255, 215, 0, 0.6), 0 0 0 4px rgba(255, 255, 255, 1), 0 0 0 5px rgba(255, 215, 0, 0.3);
+            border: none;
+            transition: all 0.2s ease;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 6px 16px rgba(255, 215, 0, 0.8), 0 0 0 4px rgba(255, 255, 255, 1), 0 0 0 6px rgba(255, 215, 0, 0.4);
+        }
+        input[type="range"]::-webkit-slider-thumb:active {
+            transform: scale(1.1);
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 4px 12px rgba(255, 215, 0, 0.6), 0 0 0 4px rgba(255, 255, 255, 1), 0 0 0 5px rgba(255, 215, 0, 0.3);
+            transition: all 0.2s ease;
+        }
+        input[type="range"]::-moz-range-thumb:hover {
+            transform: scale(1.2);
+        }
+        .chart-container {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
+            padding: 28px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+            backdrop-filter: blur(10px);
+        }
+        .chart-title {
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 20px;
+            font-size: 18px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .education-section {
+            margin-top: 32px;
+            padding-top: 32px;
+            border-top: 2px solid #e2e8f0;
+        }
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1a202c;
+            margin-bottom: 24px;
+        }
+        .education-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+        .education-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
+            padding: 28px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+        .education-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 16px 50px rgba(255, 215, 0, 0.15);
+        }
+        .education-card h3 {
+            font-size: 20px;
+            font-weight: 800;
+            color: #1a1a1a;
+            margin: 0 0 20px 0;
+            letter-spacing: -0.5px;
+        }
+        .canvas-container {
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        .explanation {
+            color: #555;
+            font-size: 14px;
+            line-height: 1.8;
+            font-weight: 400;
+        }
+        .explanation strong {
+            color: #1a1a1a;
+            font-weight: 700;
+        }
+        @media (max-width: 768px) {
+            .controls-grid {
+                grid-template-columns: 1fr;
+            }
+            h1 {
+                font-size: 32px;
+            }
+            .result-value {
+                font-size: 56px;
+            }
+        }
+        .stats-row {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            padding: 16px;
+            background: rgba(255, 215, 0, 0.08);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 215, 0, 0.2);
+        }
+        .stat {
+            text-align: center;
+        }
+        .stat-label {
+            font-size: 11px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+        .stat-value {
+            font-size: 26px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #8B4513 0%, #D2691E 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-top: 6px;
+            letter-spacing: -0.5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // Animated Gear Visualization
+        function GearAnimation({ gearRatio }) {
+            const canvasRef = useRef(null);
+            const animationRef = useRef(null);
+            const rotationRef = useRef(0);
+
+            useEffect(() => {
+                const canvas = canvasRef.current;
+                const ctx = canvas.getContext('2d');
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+
+                // Motor gear (small) on left
+                const motorGearRadius = 30;
+                const motorGearX = centerX - 80;
+                
+                // Wheel gear (large) on right
+                const wheelGearRadius = motorGearRadius * gearRatio / 2; // Visual representation
+                const wheelGearX = centerX + 80;
+
+                function drawGear(x, y, radius, teeth, rotation, color) {
+                    ctx.save();
+                    ctx.translate(x, y);
+                    ctx.rotate(rotation);
+
+                    // Draw gear body
+                    ctx.beginPath();
+                    ctx.arc(0, 0, radius * 0.7, 0, Math.PI * 2);
+                    ctx.fillStyle = color;
+                    ctx.fill();
+                    ctx.strokeStyle = '#2d3748';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+
+                    // Draw teeth
+                    for (let i = 0; i < teeth; i++) {
+                        const angle = (i / teeth) * Math.PI * 2;
+                        ctx.save();
+                        ctx.rotate(angle);
+                        ctx.fillStyle = color;
+                        ctx.fillRect(-radius * 0.15, radius * 0.7, radius * 0.3, radius * 0.3);
+                        ctx.strokeRect(-radius * 0.15, radius * 0.7, radius * 0.3, radius * 0.3);
+                        ctx.restore();
+                    }
+
+                    // Draw center hub
+                    ctx.beginPath();
+                    ctx.arc(0, 0, radius * 0.3, 0, Math.PI * 2);
+                    ctx.fillStyle = '#e2e8f0';
+                    ctx.fill();
+                    ctx.stroke();
+
+                    ctx.restore();
+                }
+
+                function drawBelt(x1, y1, r1, x2, y2, r2) {
+                    ctx.beginPath();
+                    ctx.strokeStyle = '#a0aec0';
+                    ctx.lineWidth = 3;
+                    
+                    // Top belt line
+                    const angle = Math.atan2(y2 - y1, x2 - x1);
+                    const offset = Math.PI / 2;
+                    
+                    ctx.moveTo(x1 + Math.cos(angle + offset) * r1, y1 + Math.sin(angle + offset) * r1);
+                    ctx.lineTo(x2 + Math.cos(angle + offset) * r2, y2 + Math.sin(angle + offset) * r2);
+                    
+                    // Bottom belt line
+                    ctx.moveTo(x1 + Math.cos(angle - offset) * r1, y1 + Math.sin(angle - offset) * r1);
+                    ctx.lineTo(x2 + Math.cos(angle - offset) * r2, y2 + Math.sin(angle - offset) * r2);
+                    
+                    ctx.stroke();
+                }
+
+                function animate() {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                    // Draw connection belt
+                    drawBelt(motorGearX, centerY, motorGearRadius, wheelGearX, centerY, wheelGearRadius);
+
+                    // Draw motor gear (spins fast)
+                    drawGear(motorGearX, centerY, motorGearRadius, 12, rotationRef.current, '#FFD700');
+                    
+                    // Draw wheel gear (spins slower by gear ratio)
+                    drawGear(wheelGearX, centerY, wheelGearRadius, Math.floor(12 * gearRatio / 2), -rotationRef.current / gearRatio, '#8B4513');
+
+                    // Draw labels
+                    ctx.font = 'bold 14px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillStyle = '#2d3748';
+                    ctx.fillText('Motor', motorGearX, centerY + motorGearRadius + 30);
+                    ctx.fillText('Wheel', wheelGearX, centerY + wheelGearRadius + 30);
+
+                    // Draw rotation arrows
+                    ctx.font = '20px sans-serif';
+                    ctx.fillText('⟲', motorGearX, centerY - motorGearRadius - 20);
+                    ctx.fillText('⟲', wheelGearX, centerY - wheelGearRadius - 20);
+
+                    rotationRef.current += 0.03;
+                    animationRef.current = requestAnimationFrame(animate);
+                }
+
+                animate();
+
+                return () => {
+                    if (animationRef.current) {
+                        cancelAnimationFrame(animationRef.current);
+                    }
+                };
+            }, [gearRatio]);
+
+            return <canvas ref={canvasRef} width="400" height="250" />;
+        }
+
+        // Wheel and Distance Visualization
+        function WheelDistanceAnimation({ wheelRadius, gearRatio }) {
+            const canvasRef = useRef(null);
+            const animationRef = useRef(null);
+            const rotationRef = useRef(0);
+            const distanceRef = useRef(0);
+
+            useEffect(() => {
+                const canvas = canvasRef.current;
+                const ctx = canvas.getContext('2d');
+                const centerY = canvas.height / 2;
+                const wheelX = 100;
+                const scaleFactor = 1000; // Scale wheel radius for visibility
+                const displayRadius = Math.max(30, Math.min(wheelRadius * scaleFactor, 60));
+
+                function drawWheel(x, y, radius, rotation) {
+                    ctx.save();
+                    ctx.translate(x, y);
+                    ctx.rotate(rotation);
+
+                    // Draw tire
+                    ctx.beginPath();
+                    ctx.arc(0, 0, radius, 0, Math.PI * 2);
+                    ctx.fillStyle = '#2d3748';
+                    ctx.fill();
+                    ctx.strokeStyle = '#4a5568';
+                    ctx.lineWidth = 3;
+                    ctx.stroke();
+
+                    // Draw rim
+                    ctx.beginPath();
+                    ctx.arc(0, 0, radius * 0.6, 0, Math.PI * 2);
+                    ctx.fillStyle = '#a0aec0';
+                    ctx.fill();
+
+                    // Draw spokes
+                    for (let i = 0; i < 8; i++) {
+                        const angle = (i / 8) * Math.PI * 2;
+                        ctx.beginPath();
+                        ctx.moveTo(0, 0);
+                        ctx.lineTo(Math.cos(angle) * radius * 0.9, Math.sin(angle) * radius * 0.9);
+                        ctx.strokeStyle = '#718096';
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+                    }
+
+                    // Draw center hub
+                    ctx.beginPath();
+                    ctx.arc(0, 0, radius * 0.2, 0, Math.PI * 2);
+                    ctx.fillStyle = '#FFD700';
+                    ctx.fill();
+
+                    // Draw radius line
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    ctx.lineTo(radius, 0);
+                    ctx.strokeStyle = '#f56565';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+
+                    ctx.restore();
+                }
+
+                function drawGround(wheelY, wheelRadius) {
+                    const groundY = wheelY + wheelRadius;
+                    ctx.beginPath();
+                    ctx.moveTo(0, groundY);
+                    ctx.lineTo(canvas.width, groundY);
+                    ctx.strokeStyle = '#4a5568';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+
+                    // Draw distance markers
+                    const markerSpacing = 20;
+                    for (let x = 0; x < canvas.width; x += markerSpacing) {
+                        ctx.beginPath();
+                        ctx.moveTo(x, groundY);
+                        ctx.lineTo(x, groundY + 5);
+                        ctx.stroke();
+                    }
+                }
+
+                function animate() {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                    // Draw ground
+                    drawGround(centerY, displayRadius);
+
+                    // Draw wheel
+                    drawWheel(wheelX, centerY, displayRadius, rotationRef.current);
+
+                    // Calculate distance traveled
+                    const circumference = 2 * Math.PI * wheelRadius;
+                    const motorRotations = rotationRef.current / (2 * Math.PI);
+                    const wheelRotations = motorRotations / gearRatio;
+                    const distance = wheelRotations * circumference;
+                    distanceRef.current = distance;
+
+                    // Draw distance traveled indicator
+                    ctx.font = 'bold 14px sans-serif';
+                    ctx.fillStyle = '#2d3748';
+                    ctx.textAlign = 'left';
+                    ctx.fillText(`Distance: ${Math.abs(distance).toFixed(2)} m`, 200, 30);
+                    ctx.fillText(`Wheel rotations: ${Math.abs(wheelRotations).toFixed(2)}`, 200, 50);
+                    ctx.fillText(`Motor rotations: ${Math.abs(motorRotations).toFixed(2)}`, 200, 70);
+
+                    // Draw radius label
+                    ctx.save();
+                    ctx.translate(wheelX, centerY);
+                    ctx.rotate(rotationRef.current);
+                    ctx.fillStyle = '#f56565';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(`r=${(wheelRadius * 100).toFixed(1)}cm`, displayRadius / 2, -5);
+                    ctx.restore();
+
+                    rotationRef.current += 0.05;
+                    animationRef.current = requestAnimationFrame(animate);
+                }
+
+                animate();
+
+                return () => {
+                    if (animationRef.current) {
+                        cancelAnimationFrame(animationRef.current);
+                    }
+                };
+            }, [wheelRadius, gearRatio]);
+
+            return <canvas ref={canvasRef} width="400" height="200" />;
+        }
+
+        // Units conversion
+        const rpmToRadsPerSec = (rpm) => rpm * Math.PI / 30;
+
+        // DCMotor class
+        class DCMotor {
+            constructor(nominalVoltageVolts, stallTorqueNM, stallCurrentAmps, freeCurrentAmps, freeSpeedRadPerSec, numMotors) {
+                this.nominalVoltageVolts = nominalVoltageVolts;
+                this.stallTorqueNM = stallTorqueNM * numMotors;
+                this.stallCurrentAmps = stallCurrentAmps * numMotors;
+                this.freeCurrentAmps = freeCurrentAmps * numMotors;
+                this.freeSpeedRadPerSec = freeSpeedRadPerSec;
+                this.rOhms = nominalVoltageVolts / (stallCurrentAmps * numMotors);
+                this.kTNMPerAmp = (stallTorqueNM * numMotors) / (stallCurrentAmps * numMotors);
+                this.kVRadPerSecPerVolt = freeSpeedRadPerSec / (nominalVoltageVolts - this.rOhms * freeCurrentAmps * numMotors);
+            }
+
+            static getNeoVortex(numMotors) {
+                return new DCMotor(12, 3.6, 211, 3.6, rpmToRadsPerSec(6784), numMotors);
+            }
+
+            getCurrent(speedRadPerSec, voltage) {
+                return -1.0 / this.kVRadPerSecPerVolt / this.rOhms * speedRadPerSec + 1.0 / this.rOhms * voltage;
+            }
+
+            getTorque(currentAmps) {
+                return currentAmps * this.kTNMPerAmp;
+            }
+
+            withReduction(gearboxReduction) {
+                return new DCMotor(
+                    this.nominalVoltageVolts,
+                    this.stallTorqueNM * gearboxReduction / (this.stallCurrentAmps / 211),
+                    this.stallCurrentAmps / (this.stallCurrentAmps / 211),
+                    this.freeCurrentAmps / (this.freeCurrentAmps / 3.6),
+                    this.freeSpeedRadPerSec / gearboxReduction,
+                    1
+                );
+            }
+        }
+
+        function calculateMaxAccel(wheelRadius, driveGearing, maxDriveSpeed, currentLimit) {
+            const mass = 22;
+            const numModules = 4;
+            const numMotors = 1;
+            const driveMotor = DCMotor.getNeoVortex(numMotors).withReduction(driveGearing);
+
+            const maxVelCurrent = Math.min(
+                driveMotor.getCurrent(maxDriveSpeed / wheelRadius, 12.0),
+                currentLimit * numMotors
+            );
+            const torqueLoss = Math.max(driveMotor.getTorque(maxVelCurrent), 0.0);
+            const moduleFrictionForce = (1.2 * (mass * 9.8)) / numModules;
+            const maxCurrent = Math.min(driveMotor.getCurrent(0.0, 12.0), currentLimit * numMotors);
+            const maxTorque = (maxCurrent * driveMotor.kTNMPerAmp) - torqueLoss;
+            const maxForce = Math.min(maxTorque / wheelRadius, moduleFrictionForce);
+
+            if (maxForce > 0) {
+                return (maxForce * numModules) / mass;
+            } else {
+                return 0.0;
+            }
+        }
+
+        function MaxAccelCalculator() {
+            const [wheelRadius, setWheelRadius] = useState(0.0381); // meters (1.5 inches)
+            const [driveGearing, setDriveGearing] = useState(5.143);
+            const [maxSpeed, setMaxSpeed] = useState(4.0); // m/s
+            const [currentLimit, setCurrentLimit] = useState(50); // amps
+            const [maxAccel, setMaxAccel] = useState(0);
+            const chartRef = useRef(null);
+            const chartInstance = useRef(null);
+
+            useEffect(() => {
+                const accel = calculateMaxAccel(wheelRadius, driveGearing, maxSpeed, currentLimit);
+                setMaxAccel(accel);
+            }, [wheelRadius, driveGearing, maxSpeed, currentLimit]);
+
+            useEffect(() => {
+                if (chartRef.current) {
+                    const ctx = chartRef.current.getContext('2d');
+                    
+                    // Generate data for the chart
+                    const gearingValues = [];
+                    const accelValues = [];
+                    for (let g = 3; g <= 12; g += 0.2) {
+                        gearingValues.push(g.toFixed(1));
+                        accelValues.push(calculateMaxAccel(wheelRadius, g, maxSpeed, currentLimit));
+                    }
+
+                    if (chartInstance.current) {
+                        chartInstance.current.destroy();
+                    }
+
+                    chartInstance.current = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: gearingValues,
+                            datasets: [{
+                                label: 'Max Acceleration (m/s²)',
+                                data: accelValues,
+                                borderColor: '#FFD700',
+                                backgroundColor: 'rgba(255, 215, 0, 0.1)',
+                                borderWidth: 3,
+                                fill: true,
+                                tension: 0.4,
+                                pointRadius: 0,
+                                pointHoverRadius: 6,
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: false
+                                },
+                                tooltip: {
+                                    mode: 'index',
+                                    intersect: false,
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: 'Drive Gearing Ratio',
+                                        font: {
+                                            weight: 'bold'
+                                        }
+                                    },
+                                    grid: {
+                                        display: false
+                                    }
+                                },
+                                y: {
+                                    title: {
+                                        display: true,
+                                        text: 'Max Acceleration (m/s²)',
+                                        font: {
+                                            weight: 'bold'
+                                        }
+                                    },
+                                    beginAtZero: true,
+                                    grid: {
+                                        color: '#e2e8f0'
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+
+                return () => {
+                    if (chartInstance.current) {
+                        chartInstance.current.destroy();
+                    }
+                };
+            }, [wheelRadius, driveGearing, maxSpeed, currentLimit]);
+
+            return (
+                <div className="container">
+                    <h1>Max Acceleration Calculator</h1>
+                    <p className="subtitle">Interactive swerve drive performance analyzer</p>
+
+                    <div className="result-card">
+                        <div className="result-label">Maximum Acceleration</div>
+                        <div className="result-value">{maxAccel.toFixed(2)}</div>
+                        <div className="result-unit">m/s²</div>
+                    </div>
+
+                    <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '32px'}}>
+                        <div>
+                            <div className="control-group" style={{marginBottom: '24px'}}>
+                                <label className="control-label">⚙️ Drive Gearing Ratio</label>
+                                <div className="control-value">
+                                    <span className="value-display">{driveGearing.toFixed(2)}:1</span>
+                                </div>
+                                <input
+                                    type="range"
+                                    min="3"
+                                    max="12"
+                                    step="0.1"
+                                    value={driveGearing}
+                                    onChange={(e) => setDriveGearing(parseFloat(e.target.value))}
+                                />
+                                <div className="explanation" style={{marginTop: '12px', fontSize: '13px'}}>
+                                    Motor spins <strong>{driveGearing.toFixed(1)}x</strong> for each wheel rotation
+                                </div>
+                            </div>
+
+                            <div className="education-card">
+                                <div className="canvas-container">
+                                    <GearAnimation gearRatio={driveGearing} />
+                                </div>
+                                <div className="stats-row">
+                                    <div className="stat">
+                                        <div className="stat-label">Torque Gain</div>
+                                        <div className="stat-value">{driveGearing.toFixed(1)}x</div>
+                                    </div>
+                                    <div className="stat">
+                                        <div className="stat-label">Speed Loss</div>
+                                        <div className="stat-value">÷{driveGearing.toFixed(1)}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div className="control-group" style={{marginBottom: '24px'}}>
+                                <label className="control-label">🎡 Wheel Radius</label>
+                                <div className="control-value">
+                                    <span className="value-display">{(wheelRadius * 100).toFixed(1)} cm</span>
+                                    <span style={{color: '#718096', fontSize: '14px'}}>({(wheelRadius * 39.37).toFixed(2)} in)</span>
+                                </div>
+                                <input
+                                    type="range"
+                                    min="0.025"
+                                    max="0.1"
+                                    step="0.001"
+                                    value={wheelRadius}
+                                    onChange={(e) => setWheelRadius(parseFloat(e.target.value))}
+                                />
+                                <div className="explanation" style={{marginTop: '12px', fontSize: '13px'}}>
+                                    Travels <strong>{(2 * Math.PI * wheelRadius * 100).toFixed(1)} cm</strong> per wheel rotation
+                                </div>
+                            </div>
+
+                            <div className="education-card">
+                                <div className="canvas-container">
+                                    <WheelDistanceAnimation wheelRadius={wheelRadius} gearRatio={driveGearing} />
+                                </div>
+                                <div className="stats-row">
+                                    <div className="stat">
+                                        <div className="stat-label">Circumference</div>
+                                        <div className="stat-value">{(2 * Math.PI * wheelRadius * 100).toFixed(1)}cm</div>
+                                    </div>
+                                    <div className="stat">
+                                        <div className="stat-label">Per Motor Turn</div>
+                                        <div className="stat-value">{(2 * Math.PI * wheelRadius * 100 / driveGearing).toFixed(1)}cm</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="controls-grid">
+                        <div className="control-group">
+                            <label className="control-label">⚡ Max Speed</label>
+                            <div className="control-value">
+                                <span className="value-display">{maxSpeed.toFixed(2)} m/s</span>
+                                <span style={{color: '#718096', fontSize: '14px'}}>({(maxSpeed * 3.28084).toFixed(2)} ft/s)</span>
+                            </div>
+                            <input
+                                type="range"
+                                min="1"
+                                max="8"
+                                step="0.1"
+                                value={maxSpeed}
+                                onChange={(e) => setMaxSpeed(parseFloat(e.target.value))}
+                            />
+                            <div className="explanation" style={{marginTop: '8px', fontSize: '13px'}}>
+                                Target maximum velocity of the robot
+                            </div>
+                        </div>
+
+                        <div className="control-group">
+                            <label className="control-label">🔋 Current Limit</label>
+                            <div className="control-value">
+                                <span className="value-display">{currentLimit} A</span>
+                            </div>
+                            <input
+                                type="range"
+                                min="20"
+                                max="100"
+                                step="1"
+                                value={currentLimit}
+                                onChange={(e) => setCurrentLimit(parseFloat(e.target.value))}
+                            />
+                            <div className="explanation" style={{marginTop: '8px', fontSize: '13px'}}>
+                                Maximum current draw per motor
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="chart-container">
+                        <div className="chart-title">Max Acceleration vs Drive Gearing</div>
+                        <div style={{height: '300px'}}>
+                            <canvas ref={chartRef}></canvas>
+                        </div>
+                    </div>
+
+                    <div className="education-card" style={{marginTop: '24px'}}>
+                        <h3>🎯 Understanding the Acceleration Trade-off</h3>
+                        <div className="explanation">
+                            <p style={{marginTop: 0}}>
+                                <strong>Why does gearing affect acceleration?</strong> It's all about the balance between torque and speed:
+                            </p>
+                            <ul style={{lineHeight: 1.8}}>
+                                <li><strong>High gear ratio (e.g., 8:1):</strong> Motor spins many times per wheel rotation → More torque multiplication → 
+                                Better acceleration, but lower top speed</li>
+                                <li><strong>Low gear ratio (e.g., 4:1):</strong> Motor spins fewer times per wheel rotation → Less torque → 
+                                Lower acceleration, but higher top speed</li>
+                                <li><strong>Larger wheels:</strong> Cover more ground per rotation, but require more torque to accelerate → 
+                                Same motor force produces less acceleration</li>
+                                <li><strong>Current limit:</strong> Limits how much force the motor can produce → Higher limits allow more acceleration 
+                                (up to the friction limit)</li>
+                            </ul>
+                            <p>
+                                The <strong>friction limit</strong> (1.2 × weight / 4 modules = {((1.2 * 22 * 9.8) / 4).toFixed(1)}N per module) represents 
+                                the maximum force before the wheels slip. This is why very high gear ratios don't always help - you hit the traction limit first!
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<MaxAccelCalculator />, document.getElementById('root'));
+    </script>
+</body>
+</html>
