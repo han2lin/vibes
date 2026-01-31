@@ -101,7 +101,7 @@ function updateUI() {
     if (labels.wheelRadius.val) labels.wheelRadius.val.textContent = `${params.wheelRadius.toFixed(3)}m`;
     if (labels.wheelRadius.sec) labels.wheelRadius.sec.textContent = `(${(params.wheelRadius * 39.3701).toFixed(1)}in)`;
 
-    if (labels.driveGearing.val) labels.driveGearing.val.textContent = `${params.driveGearing.toFixed(3)}:1`;
+    if (labels.driveGearing.val) labels.driveGearing.val.textContent = `${params.driveGearing.toFixed(2)}:1`;
 
     if (labels.maxDriveSpeed.val) labels.maxDriveSpeed.val.textContent = `${params.maxDriveSpeed.toFixed(1)}m/s`;
     if (labels.maxDriveSpeed.sec) labels.maxDriveSpeed.sec.textContent = `(${(params.maxDriveSpeed * 3.28084).toFixed(1)}ft/s)`;
